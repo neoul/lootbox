@@ -1,0 +1,39 @@
+
+services:
+  app:
+    build:
+      # context: .
+      dockerfile_inline: |
+        FROM node:20
+        WORKDIR /app
+        RUN npm install -g pnpm
+        COPY tsconfig.json package.json pnpm-lock.yaml server vrf /app
+        RUN pnpm install
+        EXPOSE 8080
+        CMD pnpm run start:dev
+    ports:
+      - 8080:8080
+    environment:
+      - NODE_ENV=development
+      - DATABASE_URL=postgres://lootbox_user:lootbox_passwd01@db:5432/lootbox_db
+    volumes:
+      - .:/app
+      - /app/node_modules
+    depends_on:
+      - db
+    # command: pnpm run start:dev
+    # extra_hosts:
+    #   - 'host.docker.internal:host-gateway'
+  db:
+    image: postgres:16.4
+    environment:
+      - POSTGRES_USER=lootbox_user
+      - POSTGRES_PASSWORD=lootbox_passwd01
+      - POSTGRES_DB=lootbox_db
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    ports:
+      - "5432:5432"
+
+volumes:
+  postgres_data:

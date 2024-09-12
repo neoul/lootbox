@@ -13,6 +13,7 @@ export const loggingConfig: { [key: string]: pino.LoggerOptions | boolean } = {
       },
     },
   },
+  // development: true,
   production: true,
   test: false,
 };

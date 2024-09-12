@@ -7,19 +7,23 @@
     "test": "echo \"Error: no test specified\" && exit 1",
     "build": "tsc -p tsconfig.json",
     "start": "node ./dist/server/index.js",
-    "start:dev": "ts-node ./server/index.ts",
+    "start:dev": "ts-node-dev ./server/index.ts",
     "clean": "rm -rf dist"
   },
   "keywords": [],
-  "author": "",
+  "author": "willing@supervlabs.io",
   "license": "ISC",
   "devDependencies": {
     "@types/node": "^22.5.4",
     "pino-pretty": "^11.2.2",
+    "ts-node-dev": "^2.0.0",
     "typescript": "^5.6.2"
   },
   "dependencies": {
+    "@fastify/type-provider-typebox": "^4.1.0",
+    "@sinclair/typebox": "^0.33.10",
     "fastify": "^4.28.1",
-    "pino": "^9.4.0"
+    "pino": "^9.4.0",
+    "typeorm-fastify-plugin": "^2.0.1"
   }
 }
