@@ -9,13 +9,19 @@ services:
         RUN npm install -g pnpm
         COPY tsconfig.json package.json pnpm-lock.yaml server vrf /app
         RUN pnpm install
-        EXPOSE 8080
+        EXPOSE 8282
         CMD pnpm run start:dev
     ports:
-      - 8080:8080
+      - 8282:8282
     environment:
       - NODE_ENV=development
-      - DATABASE_URL=postgres://lootbox_user:lootbox_passwd01@db:5432/lootbox_db
+      - DATABASE_HOST=db
+      - DATABASE_USERNAME=lootbox_user
+      - DATABASE_PASSWORD=lootbox_passwd01
+      - DATABASE_PORT=5432
+      - DATABASE_DBNAME=lootbox_db
+      - DATABASE_SYNCHRONIZE=true
+      - DATABASE_URL='postgresql://lootbox_user:lootbox_passwd01@localhost:5432/lootbox_db'
     volumes:
       - .:/app
       - /app/node_modules
@@ -33,7 +39,7 @@ services:
     volumes:
       - postgres_data:/var/lib/postgresql/data
     ports:
-      - "5432:5432"
+      - "7654:5432"
 
 volumes:
   postgres_data:
