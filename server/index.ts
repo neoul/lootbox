@@ -2,26 +2,29 @@ import "reflect-metadata";
 import * as dotenv from "dotenv";
 import Fastify from "fastify";
 import { TypeBoxTypeProvider } from "@fastify/type-provider-typebox";
-import { configureRoutes } from "./routes/movie.routes";
+import { configureRoutes } from "./routes/movie.route";
 import { configureDatabase } from "./db.config";
 
 import { loggingConfig } from "./logging";
+import { userRoutes } from "./routes/vrf";
 
 async function run() {
   const environment = process.env.NODE_ENV || "development";
   dotenv.config({ path: [`.env.${environment}`] });
-  const server = Fastify({
+  const instance = Fastify({
     logger: loggingConfig[environment] ?? true,
     // bodyLimit: 1000000, // 1MB
   }).withTypeProvider<TypeBoxTypeProvider>();
 
-  configureDatabase(server);
+  configureDatabase(instance);
 
-  configureRoutes(server);
+  configureRoutes(instance);
+  // routes(instance);
+  instance.register(userRoutes, { prefix: "/vrf" });
 
   const HOST = process.env.HOST || "0.0.0.0";
   const PORT = process.env.PORT || "8282";
-  return await server.listen({ host: HOST, port: parseInt(PORT) });
+  return await instance.listen({ host: HOST, port: parseInt(PORT) });
 }
 run()
   .then((address) => {
