@@ -3,7 +3,7 @@ import { MovieType } from "../types";
 import { Movie } from "../database/entities/movie.entity";
 import { IQuerystring, IReply, IdeleteReply } from "../interfaces";
 
-export function configureRoutes(server: FastifyInstance) {
+export async function configureRoutes(server: FastifyInstance) {
   server.get<{ Reply: IReply }>("/", async (request, reply) => {
     const movieRepository = server.orm["typeorm"].getRepository(Movie);
     const movies = await movieRepository.find();

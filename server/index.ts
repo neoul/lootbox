@@ -6,7 +6,11 @@ import { configureRoutes } from "./routes/movie.route";
 import { configureDatabase } from "./db.config";
 
 import { loggingConfig } from "./logging";
-import { userRoutes } from "./routes/vrf";
+import { setupLootRoutes } from "./routes/lootbox";
+// JSON.stringify for BigInt
+(BigInt.prototype as any).toJSON = function () {
+  return this.toString();
+};
 
 async function run() {
   const environment = process.env.NODE_ENV || "development";
@@ -20,7 +24,7 @@ async function run() {
 
   configureRoutes(instance);
   // routes(instance);
-  instance.register(userRoutes, { prefix: "/vrf" });
+  instance.register(setupLootRoutes, { prefix: "/lootbox" });
 
   const HOST = process.env.HOST || "0.0.0.0";
   const PORT = process.env.PORT || "8282";

@@ -2,7 +2,7 @@ import plugin from "typeorm-fastify-plugin";
 import { Movie } from "./database/entities/movie.entity";
 import { FastifyInstance } from "fastify";
 
-export function configureDatabase(server: FastifyInstance) {
+export async function configureDatabase(server: FastifyInstance) {
   console.log("Connecting to database...", process.env.DATABASE_SYNCHRONIZE === "true");
   // Connect to the PostgreSQL database using TypeORM Fastify plugin.
   server.register(plugin, {
