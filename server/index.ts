@@ -9,11 +9,11 @@ import { configureRoutes } from "./routes/movie.route";
 import { configureDatabase } from "./database/db.config";
 
 import { loggingConfig } from "./logging";
-import { setupLootRoutes } from "./routes/lootbox";
+import { setupLootbox } from "./routes/lootbox";
 // JSON.stringify for BigInt
-(BigInt.prototype as any).toJSON = function () {
-  return this.toString();
-};
+// (BigInt.prototype as any).toJSON = function () {
+//   return this.toString();
+// };
 
 async function run() {
   const environment = process.env.NODE_ENV || "development";
@@ -21,15 +21,13 @@ async function run() {
   const instance = Fastify({
     logger: loggingConfig[environment] ?? true,
     // bodyLimit: 1000000, // 1MB
-  })
-    .setValidatorCompiler(TypeBoxValidatorCompiler)
-    .withTypeProvider<TypeBoxTypeProvider>();
+  }).withTypeProvider<TypeBoxTypeProvider>();
 
   configureDatabase(instance);
 
   configureRoutes(instance);
   // routes(instance);
-  instance.register(setupLootRoutes, { prefix: "/lootbox" });
+  instance.register(setupLootbox, { prefix: "/lootbox" });
 
   const HOST = process.env.HOST || "0.0.0.0";
   const PORT = process.env.PORT || "8282";

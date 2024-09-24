@@ -7,3 +7,13 @@ set +a
 # pnpm migration:create lootbox_rolls
 pnpm migration:run
 ```
+
+```bash
+curl -X POST http://localhost:8282/lootbox \
+     -H "Content-Type: application/json" \
+     -d '{
+       "user_id": "1b9d6bcd-bbfd-4b2d-9b5d-ab8dfbbd4bed",
+       "roll_id": "12345",
+       "roll_count": 5
+     }'
+```
