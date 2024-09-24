@@ -1,4 +1,4 @@
-import { MovieType, LootboxOutputType, LootboxInputType } from "./types";
+import { MovieType, LootboxRollReplyType, LootboxRollBodyType } from "./types";
 // import { FastifyInstance, FastifyRequest, FastifyReply } from "fastify";
 
 interface IReply {
@@ -31,7 +31,7 @@ interface IdeleteReply {
 }
 
 export interface IReplyLootbox {
-  200: LootboxOutputType;
+  200: LootboxRollReplyType;
   302: { url: string };
   "4xx": { error: string };
   "5xx": { error: string };

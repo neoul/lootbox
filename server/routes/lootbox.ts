@@ -10,14 +10,14 @@ import {
   RandomNumber,
 } from "../database/entities/LootboxRoll.entity";
 import {
-  LootboxRollQueryString,
-  LootboxInput,
-  LootboxOutput,
-  LootboxInputType,
-  LootboxOutputType,
+  LootboxRollQuerySchema,
+  LootboxRollBody,
+  LootboxRollReplySchema,
+  LootboxRollBodyType,
+  LootboxRollReplyType,
   LootboxQueryStringType,
-  LootboxOutputArrayType,
-  LootboxOutputArraySchema,
+  LootboxRollArrayReplyType,
+  LootboxRollArrayReplySchema,
   ErrorType,
   ErrorSchema,
 } from "../types";
@@ -42,7 +42,7 @@ export const setupLootRoutes = async (
   instance.get<{
     Querystring: LootboxQueryStringType;
     Reply: {
-      200: LootboxOutputArrayType;
+      200: LootboxRollArrayReplyType;
       "4xx": ErrorType;
       "5xx": ErrorType;
     };
@@ -50,12 +50,12 @@ export const setupLootRoutes = async (
     "/",
     {
       schema: {
-        querystring: LootboxRollQueryString,
-        // response: {
-        //   200: LootboxOutputArraySchema,
-        //   "4xx": ErrorSchema,
-        //   "5xx": ErrorSchema,
-        // },
+        querystring: LootboxRollQuerySchema,
+        response: {
+          200: LootboxRollArrayReplySchema,
+          "4xx": ErrorSchema,
+          "5xx": ErrorSchema,
+        },
       },
       // preValidation: (request, reply, done) => {
       //   const { user_id, roll_id } = request.query;
@@ -90,14 +90,14 @@ export const setupLootRoutes = async (
 
         const lootboxRolls = await query.getMany();
         const response = lootboxRolls.map((lootboxRoll) => ({
-          sequence: lootboxRoll.sequence,
+          sequence: String(lootboxRoll.sequence),
           nonce: lootboxRoll.nonce,
           user_id: lootboxRoll.user_id,
-          roll_id: lootboxRoll.roll_id,
+          roll_id: String(lootboxRoll.roll_id),
           roll_count: lootboxRoll.roll_count,
-          server_nonce: lootboxRoll.server_nonce,
-          server_timestamp: lootboxRoll.server_timestamp,
-          random_numbers: lootboxRoll.random_numbers.map((randomNumber) => randomNumber.random_number),
+          server_nonce: String(lootboxRoll.server_nonce),
+          server_timestamp: lootboxRoll.server_timestamp.toISOString(),
+          random_numbers: lootboxRoll.random_numbers.map((randomNumber) => String(randomNumber.random_number)),
         }));
 
 
@@ -113,9 +113,9 @@ export const setupLootRoutes = async (
     }
   );
   instance.post<{
-    Body: LootboxInputType;
+    Body: LootboxRollBodyType;
     Reply: {
-      200: LootboxOutputType;
+      200: LootboxRollReplyType;
       302: { url: string };
       "4xx": { error: string };
       "5xx": { error: string };
@@ -123,15 +123,15 @@ export const setupLootRoutes = async (
   }>("/", {
     handler: async (request, reply) => {
       const { user_id, roll_id, roll_count } = request.body;
-      const sequence = BigInt(Date.now());
-      const response: LootboxOutputType = {
+      const sequence = String(BigInt(Date.now()));
+      const response: LootboxRollReplyType = {
         user_id,
         roll_id,
         roll_count,
-        server_nonce: BigInt(
+        server_nonce: String(
           Math.floor(Math.random() * Number.MAX_SAFE_INTEGER)
         ),
-        server_timestamp: new Date(),
+        server_timestamp: new Date().toISOString(),
         sequence,
         nonce: "database nonce",
         random_numbers: Array(roll_count).fill({

@@ -59,14 +59,14 @@ export class RandomNumber {
   lootboxRoll!: LootboxRoll;
 }
 
-// // LootboxInput 및 LootboxOutput 타입 정의
-// export type LootboxInputType = {
+// // LootboxRollBody 및 LootboxRollReplySchema 타입 정의
+// export type LootboxRollBodyType = {
 //   user_id: string;
 //   roll_id: bigint;
 //   roll_count: number;
 // };
 
-// export type LootboxOutputType = LootboxInputType & {
+// export type LootboxRollReplyType = LootboxRollBodyType & {
 //   sequence: bigint;
 //   nonce: string;
 //   server_nonce: string;
@@ -74,10 +74,10 @@ export class RandomNumber {
 //   random_number: bigint[];
 // };
 
-// // LootboxRoll 엔티티를 LootboxOutputType으로 변환하는 함수
-// export function convertToLootboxOutput(
+// // LootboxRoll 엔티티를 LootboxRollReplyType으로 변환하는 함수
+// export function convertToLootboxRollReplySchema(
 //   lootboxRoll: LootboxRoll
-// ): LootboxOutputType {
+// ): LootboxRollReplyType {
 //   return {
 //     user_id: lootboxRoll.user_id,
 //     roll_id: lootboxRoll.roll_id,
