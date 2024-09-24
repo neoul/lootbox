@@ -28,7 +28,7 @@ export class LootboxRoll {
   roll_count!: number;
 
   @Column("bigint")
-  server_nonce!: string;
+  server_nonce!: bigint;
 
   @Column("timestamp")
   server_timestamp!: Date;
@@ -45,47 +45,47 @@ export class LootboxRoll {
 
 @Entity("random_numbers")
 export class RandomNumber {
-  @PrimaryColumn()
-  lootbox_roll_sequence!: number;
+  @PrimaryColumn({ type: "bigint" })
+  lootbox_roll_sequence!: bigint;
 
   @PrimaryColumn()
   sequence_number!: number;
 
   @Column("bigint")
-  random_number!: string;
+  random_number!: bigint;
 
   @ManyToOne(() => LootboxRoll, (lootboxRoll) => lootboxRoll.random_numbers)
   @JoinColumn({ name: "lootbox_roll_sequence" })
   lootboxRoll!: LootboxRoll;
 }
 
-// LootboxInput 및 LootboxOutput 타입 정의
-export type LootboxInputType = {
-  user_id: string;
-  roll_id: bigint;
-  roll_count: number;
-};
+// // LootboxInput 및 LootboxOutput 타입 정의
+// export type LootboxInputType = {
+//   user_id: string;
+//   roll_id: bigint;
+//   roll_count: number;
+// };
 
-export type LootboxOutputType = LootboxInputType & {
-  sequence: bigint;
-  nonce: string;
-  server_nonce: string;
-  server_timestamp: Date;
-  random_number: string[];
-};
+// export type LootboxOutputType = LootboxInputType & {
+//   sequence: bigint;
+//   nonce: string;
+//   server_nonce: string;
+//   server_timestamp: Date;
+//   random_number: bigint[];
+// };
 
-// LootboxRoll 엔티티를 LootboxOutputType으로 변환하는 함수
-export function convertToLootboxOutput(
-  lootboxRoll: LootboxRoll
-): LootboxOutputType {
-  return {
-    user_id: lootboxRoll.user_id,
-    roll_id: lootboxRoll.roll_id,
-    roll_count: lootboxRoll.roll_count,
-    server_nonce: lootboxRoll.server_nonce,
-    server_timestamp: lootboxRoll.server_timestamp,
-    sequence: lootboxRoll.sequence,
-    nonce: lootboxRoll.nonce,
-    random_number: lootboxRoll.random_numbers.map((rn) => rn.random_number),
-  };
-}
+// // LootboxRoll 엔티티를 LootboxOutputType으로 변환하는 함수
+// export function convertToLootboxOutput(
+//   lootboxRoll: LootboxRoll
+// ): LootboxOutputType {
+//   return {
+//     user_id: lootboxRoll.user_id,
+//     roll_id: lootboxRoll.roll_id,
+//     roll_count: lootboxRoll.roll_count,
+//     server_nonce: lootboxRoll.server_nonce,
+//     server_timestamp: lootboxRoll.server_timestamp,
+//     sequence: lootboxRoll.sequence,
+//     nonce: lootboxRoll.nonce,
+//     random_number: lootboxRoll.random_numbers.map((rn) => rn.random_number),
+//   };
+// }
