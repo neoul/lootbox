@@ -1,6 +1,6 @@
 import { FastifyInstance } from "fastify";
 import { MovieType } from "../types";
-import { Movie } from "../database/entities/movie.entity";
+import { Movie } from "../database/entities/Movie.entity";
 import { IQuerystring, IReply, IdeleteReply } from "../interfaces";
 
 export async function configureRoutes(server: FastifyInstance) {

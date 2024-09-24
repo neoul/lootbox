@@ -3,7 +3,7 @@ import * as dotenv from "dotenv";
 import Fastify from "fastify";
 import { TypeBoxTypeProvider } from "@fastify/type-provider-typebox";
 import { configureRoutes } from "./routes/movie.route";
-import { configureDatabase } from "./db.config";
+import { configureDatabase } from "./database/db.config";
 
 import { loggingConfig } from "./logging";
 import { setupLootRoutes } from "./routes/lootbox";

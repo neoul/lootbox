@@ -20,8 +20,8 @@ export const LootboxOutput = Type.Intersect([
   Type.Object({
     server_nonce: Type.BigInt(),
     server_timestamp: Type.Date(),
-    database_sequence: Type.BigInt(),
-    database_nonce: Type.String(), // { format: "uuid" }
+    id: Type.BigInt(),
+    nonce: Type.String(), // { format: "uuid" }
     random_number: Type.Array(Type.BigInt()),
   }),
 ]);

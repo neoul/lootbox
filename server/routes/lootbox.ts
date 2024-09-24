@@ -4,7 +4,7 @@ import {
   FastifyReply,
   FastifyRequest,
 } from "fastify";
-import { Movie } from "../database/entities/movie.entity";
+import { Movie } from "../database/entities/Movie.entity";
 import { IReplyLootbox } from "../interfaces";
 import {
   LootboxInput,
@@ -46,8 +46,8 @@ export const setupLootRoutes = async (
           Math.floor(Math.random() * Number.MAX_SAFE_INTEGER)
         ),
         server_timestamp: new Date(),
-        database_sequence: BigInt(Date.now()),
-        database_nonce: "database nonce",
+        id: BigInt(Date.now()),
+        nonce: "database nonce",
         random_number: Array(roll_count)
           .fill(0)
           .map(() =>

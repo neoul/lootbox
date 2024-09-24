@@ -37,9 +37,9 @@ services:
       - POSTGRES_PASSWORD=lootbox_passwd01
       - POSTGRES_DB=lootbox_db
     volumes:
-      - postgres_data:/var/lib/postgresql/data
+      - db_data:/var/lib/postgresql/data
     ports:
       - "7654:5432"
 
 volumes:
-  postgres_data:
+  db_data:

@@ -7,8 +7,12 @@
     "test": "echo \"Error: no test specified\" && exit 1",
     "build": "tsc -p tsconfig.json",
     "start": "node ./dist/server/index.js",
-    "start:dev": "ts-node-dev ./server/index.ts",
-    "clean": "rm -rf dist"
+    "start:dev": "DOTENV_CONFIG_PATH=.env.development ts-node-dev ./server/index.ts",
+    "clean": "rm -rf dist node_modules",
+    "migration:create": "cd server/database/migrations && typeorm-ts-node-commonjs migration:create",
+    "migration:genrate": "typeorm-ts-node-commonjs migration:generate -d server/database/datasource.ts server/database/migrations",
+    "migration:run": "typeorm-ts-node-commonjs migration:run -d ./server/database/datasource.ts --transaction each -- server/database/migrations",
+    "migrations:revert": "typeorm-ts-node-commonjs migration:revert -d server/database/datasource.ts --transaction each --"
   },
   "keywords": [],
   "author": "willing@supervlabs.io",
