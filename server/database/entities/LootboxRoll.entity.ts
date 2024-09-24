@@ -39,12 +39,12 @@ export class LootboxRoll {
   @UpdateDateColumn({ type: "timestamp" })
   updated_at!: Date;
 
-  @OneToMany(() => RandomNumber, (randomNumber) => randomNumber.lootboxRoll)
-  random_numbers!: RandomNumber[];
+  @OneToMany(() => LootboxRandomNumber, (randomNumber) => randomNumber.lootboxRoll)
+  random_numbers!: LootboxRandomNumber[];
 }
 
-@Entity("random_numbers")
-export class RandomNumber {
+@Entity("lootbox_random_numbers")
+export class LootboxRandomNumber {
   @PrimaryColumn({ type: "bigint" })
   lootbox_roll_sequence!: bigint;
 
@@ -58,34 +58,3 @@ export class RandomNumber {
   @JoinColumn({ name: "lootbox_roll_sequence" })
   lootboxRoll!: LootboxRoll;
 }
-
-// // LootboxRollBody 및 LootboxRollReplySchema 타입 정의
-// export type LootboxRollBodyType = {
-//   user_id: string;
-//   roll_id: bigint;
-//   roll_count: number;
-// };
-
-// export type LootboxRollReplyType = LootboxRollBodyType & {
-//   sequence: bigint;
-//   nonce: string;
-//   server_nonce: string;
-//   server_timestamp: Date;
-//   random_number: bigint[];
-// };
-
-// // LootboxRoll 엔티티를 LootboxRollReplyType으로 변환하는 함수
-// export function convertToLootboxRollReplySchema(
-//   lootboxRoll: LootboxRoll
-// ): LootboxRollReplyType {
-//   return {
-//     user_id: lootboxRoll.user_id,
-//     roll_id: lootboxRoll.roll_id,
-//     roll_count: lootboxRoll.roll_count,
-//     server_nonce: lootboxRoll.server_nonce,
-//     server_timestamp: lootboxRoll.server_timestamp,
-//     sequence: lootboxRoll.sequence,
-//     nonce: lootboxRoll.nonce,
-//     random_number: lootboxRoll.random_numbers.map((rn) => rn.random_number),
-//   };
-// }

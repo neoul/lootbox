@@ -7,7 +7,7 @@ import {
 import { Repository } from "typeorm";
 import {
   LootboxRoll,
-  RandomNumber,
+  LootboxRandomNumber,
 } from "../database/entities/LootboxRoll.entity";
 import {
   LootboxRollQuerySchema,
