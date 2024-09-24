@@ -1,7 +1,10 @@
 import "reflect-metadata";
 import * as dotenv from "dotenv";
 import Fastify from "fastify";
-import { TypeBoxTypeProvider } from "@fastify/type-provider-typebox";
+import {
+  TypeBoxTypeProvider,
+  TypeBoxValidatorCompiler,
+} from "@fastify/type-provider-typebox";
 import { configureRoutes } from "./routes/movie.route";
 import { configureDatabase } from "./database/db.config";
 
@@ -18,7 +21,9 @@ async function run() {
   const instance = Fastify({
     logger: loggingConfig[environment] ?? true,
     // bodyLimit: 1000000, // 1MB
-  }).withTypeProvider<TypeBoxTypeProvider>();
+  })
+    .setValidatorCompiler(TypeBoxValidatorCompiler)
+    .withTypeProvider<TypeBoxTypeProvider>();
 
   configureDatabase(instance);
 
