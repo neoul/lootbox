@@ -40,7 +40,7 @@ interface IPostLootboxRoll {
     "4xx": { error: string };
     "5xx": { error: string };
   };
-};
+}
 
 const SPostLootboxRoll = {
   body: LootboxRollBodySchema,
@@ -149,13 +149,9 @@ export const setupLootbox = async (
         server_timestamp: new Date().toISOString(),
         sequence,
         nonce: "database nonce",
-        random_numbers: Array(roll_count).fill({
-          lootbox_roll_sequence: sequence,
-          sequence_number: 0,
-          random_number: BigInt(
-            Math.floor(Math.random() * Number.MAX_SAFE_INTEGER)
-          ),
-        }),
+        random_numbers: Array(roll_count).fill(
+          String(BigInt(Math.floor(Math.random() * Number.MAX_SAFE_INTEGER)))
+        ),
       };
       reply.code(200).send(response);
     },
