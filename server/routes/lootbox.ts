@@ -21,7 +21,8 @@ import {
   TError,
   SError,
 } from "../types";
-import { Static, Type } from "@sinclair/typebox";
+import VRF from "../../vrf";
+import { generateSecp256r1KeyPair } from "../config";
 
 interface UserRequest extends FastifyRequest {
   // Define any custom properties for the request here
@@ -73,6 +74,8 @@ export const setupLootbox = async (
   instance: FastifyInstance,
   opts: FastifyPluginOptions
 ) => {
+  const keypair = opts.keypair as ReturnType<typeof generateSecp256r1KeyPair>;
+  const vrf = new VRF(keypair.privateKey);
   const lootboxRollRepository: Repository<LootboxRoll> =
     instance.orm.getRepository(LootboxRoll);
   // instance.get("/", handler_v1);

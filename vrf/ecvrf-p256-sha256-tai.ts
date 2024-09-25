@@ -25,7 +25,7 @@ type Point = elliptic.curve.base.BasePoint;
 const EC = new elliptic.ec("p256");
 const suite = [0x01];
 
-function string_to_point(s: number[]): Point | "INVALID" {
+export function to_point(s: number[]): Point | "INVALID" {
   try {
     return EC.curve.decodePoint(s);
   } catch {
@@ -37,7 +37,7 @@ function arbitrary_string_to_point(s: number[]): Point | "INVALID" {
   if (s.length !== 32) {
     throw new Error("s should be 32 byte");
   }
-  return string_to_point([2, ...s]);
+  return to_point([2, ...s]);
 }
 
 function hash_to_curve(public_key: Point, alpha: number[]) {
@@ -110,7 +110,7 @@ function decode_proof(pi: number[]) {
   const gamma_string = pi.slice(0, 33);
   const c_string = pi.slice(33, 33 + 16);
   const s_string = pi.slice(33 + 16, 33 + 16 + 32);
-  const Gamma = string_to_point(gamma_string);
+  const Gamma = to_point(gamma_string);
   if (Gamma == "INVALID") {
     return "INVALID";
   }
@@ -125,7 +125,7 @@ function decode_proof(pi: number[]) {
   };
 }
 
-function _prove(secret_key: BN, alpha: number[]): number[] {
+export function _prove(secret_key: BN, alpha: number[]): number[] {
   const public_key = EC.keyFromPrivate(secret_key.toArray()).getPublic();
   const H = hash_to_curve(public_key, alpha);
   const h_string = H.encode("array", true);
@@ -144,7 +144,7 @@ function _prove(secret_key: BN, alpha: number[]): number[] {
   return pi;
 }
 
-function _proof_to_hash(pi: number[]): number[] {
+export function _proof_to_hash(pi: number[]): number[] {
   const D = decode_proof(pi);
   if (D == "INVALID") {
     throw new Error("Invalid proof");
@@ -161,7 +161,7 @@ function _proof_to_hash(pi: number[]): number[] {
   return beta;
 }
 
-function _verify(public_key: Point, pi: number[], alpha: number[]) {
+export function _verify(public_key: Point, pi: number[], alpha: number[]) {
   const D = decode_proof(pi);
   if (D == "INVALID") {
     throw new Error("Invalid proof");
@@ -177,8 +177,8 @@ function _verify(public_key: Point, pi: number[], alpha: number[]) {
   return _proof_to_hash(pi);
 }
 
-function _validate_key(public_key_string: number[]) {
-  const public_key = string_to_point(public_key_string);
+export function _validate_key(public_key_string: number[]) {
+  const public_key = to_point(public_key_string);
   if (public_key == "INVALID" || public_key.isInfinity()) {
     throw new Error("Invalid public key");
   }
@@ -194,32 +194,6 @@ export function keygen() {
     public_key,
   };
 }
-
-// rfc9381
-interface IVRF {
-  hash(alpha: Uint8Array): Uint8Array; // beta = VRF_hash(SK, alpha)
-  prove(secret_key: Uint8Array, alpha: Uint8Array): Uint8Array; // pi = VRF_prove(SK, alpha)
-  proofToHash(pi: Uint8Array): Uint8Array; // beta = VRF_proof_to_hash(pi)
-  verify(public_key: Uint8Array, alpha: Uint8Array, pi: Uint8Array): boolean; // valid = VRF_verify(PK, alpha, pi)
-}
-
-// class VRF implements IVRF {
-//   private secretKey: Uint8Array | null = null;
-//   private publicKey: Uint8Array | null = null;
-
-//   constructor(secretKey?: Uint8Array) {
-//     if (secretKey) {
-//       this.setSecretKey(secretKey);
-//     }
-//   }
-
-//   setSecretKey(secretKey: Uint8Array): void {
-//     this.secretKey = secretKey;
-//     // Derive public key from secret key
-//     const { public_key } = p256.keygen();
-//     this.publicKey = VRF.fromHex(public_key);
-//   }
-// }
 
 export function prove(secret_key: string, alpha: string): string {
   const pi = _prove(new BN(secret_key, "hex"), toNumberArray(alpha, "hex"));

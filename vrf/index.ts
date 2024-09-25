@@ -1,90 +1,111 @@
 import * as p256 from "./ecvrf-p256-sha256-tai";
-export default p256;
-// interface IVRF {
-//   hash(alpha: Uint8Array): Uint8Array; // beta = VRF_hash(SK, alpha)
-//   prove(secret_key: Uint8Array, alpha: Uint8Array): Uint8Array; // pi = VRF_prove(SK, alpha)
-//   proofToHash(pi: Uint8Array): Uint8Array; // beta = VRF_proof_to_hash(pi)
-//   verify(public_key: Uint8Array, alpha: Uint8Array, pi: Uint8Array): boolean; // valid = VRF_verify(PK, alpha, pi)
-// }
+import BN from "bn.js";
+import * as crypto from "crypto";
 
-// class VRF implements IVRF {
-//   private secretKey: Uint8Array | null = null;
-//   private publicKey: Uint8Array | null = null;
+// rfc9381
+interface IVRF {
+  hash(alpha: Uint8Array): { beta: Uint8Array; pi: Uint8Array }; // {beta, pi} = VRF_hash(SK, alpha)
+  prove(alpha: Uint8Array): Uint8Array; // pi = VRF_prove(SK, alpha)
+  proofToHash(pi: Uint8Array): Uint8Array; // beta = VRF_proof_to_hash(pi)
+  verify(alpha: Uint8Array, pi: Uint8Array, beta: Uint8Array): boolean; // valid = VRF_verify(PK, alpha, pi)
+}
 
-//   constructor(secretKey?: Uint8Array) {
-//     if (secretKey) {
-//       this.setSecretKey(secretKey);
-//     }
-//   }
+export class VRF implements IVRF {
+  private privateKey: number[];
+  private publicKey: number[];
+  private secretKey: BN;
 
-//   private static toHex(array: Uint8Array): string {
-//     return Array.from(array, (byte) => byte.toString(16).padStart(2, "0")).join(
-//       ""
-//     );
-//   }
+  constructor(secretKey: string) {
+    const privateKeyBuf = this.extractRawPrivateKey(secretKey);
+    // const privateKeyBuf = Buffer.from(secretKey, "hex");
+    this.privateKey = Array.from(privateKeyBuf);
+    this.secretKey = new BN(this.privateKey);
+    const privateKey = crypto.createPrivateKey({
+      key: privateKeyBuf,
+      format: "der",
+      type: "pkcs8",
+    });
+    const publicKey = crypto.createPublicKey(privateKey);
+    const publicKeyRaw = publicKey.export({ format: "der", type: "spki" });
+    this.publicKey = Array.from(this.compressPublicKey(publicKeyRaw));
+    console.log("Public key", this.publicKey.toString());
+    p256._validate_key(this.publicKey);
+  }
 
-//   private static fromHex(hex: string): Uint8Array {
-//     return new Uint8Array(
-//       hex.match(/.{1,2}/g)!.map((byte) => parseInt(byte, 16))
-//     );
-//   }
+  private compressPublicKey(publicKeyRaw: Buffer): Buffer {
+    const prefix = publicKeyRaw[64] % 2 === 0 ? 0x02 : 0x03;
+    return Buffer.concat([Buffer.from([prefix]), publicKeyRaw.slice(1, 33)]);
+  }
 
-//   setSecretKey(secretKey: Uint8Array): void {
-//     this.secretKey = secretKey;
-//     // Derive public key from secret key
-//     const { public_key } = p256.keygen();
-//     this.publicKey = VRF.fromHex(public_key);
-//   }
+  extractRawPrivateKey(pemPrivateKey: string): Buffer {
+    // Remove PEM headers and decode base64
+    console.log("pemPrivateKey", pemPrivateKey);
+    // const pemContent = pemPrivateKey
+    //   .replace(/-----BEGIN PRIVATE KEY-----/, '')
+    //   .replace(/-----END PRIVATE KEY-----/, '')
+    //   .replace(/\n/g, '');
+    // console.log("pemContent", pemContent);
+    // const derBuffer = Buffer.from(pemContent, 'base64');
+    const cleanedPemPrivateKey = pemPrivateKey
+    .replace(/\n/g, '') // Remove all newlines
+    .replace(/-----BEGIN PRIVATE KEY-----/, '-----BEGIN PRIVATE KEY-----\n')
+    .replace(/-----END PRIVATE KEY-----/, '\n-----END PRIVATE KEY-----\n');
+    // Parse the DER-encoded key
+    const parsedKey = crypto.createPrivateKey({
+      key: cleanedPemPrivateKey,
+      format: 'pem',
+      type: 'pkcs8'
+    });
+  
+    // Export the key in DER format
+    const derKey = parsedKey.export({
+      format: 'der',
+      type: 'sec1'
+    });
+  
+    // Decode the ASN.1 structure
+    const decoded = derKey.subarray(7, 39);
+  
+    // Extract the raw private key
+    return decoded;
+  }
 
-//   getPublicKey(): Uint8Array {
-//     if (!this.publicKey) {
-//       throw new Error("Secret key not set");
-//     }
-//     return this.publicKey;
-//   }
+  getPublicKey() {
+    return Buffer.from(this.publicKey).toString("hex");
+  }
 
-//   hash(alpha: Uint8Array): Uint8Array {
-//     if (!this.secretKey) {
-//       throw new Error("Secret key not set");
-//     }
-//     const pi = this.prove(this.secretKey, alpha);
-//     return this.proofToHash(pi);
-//   }
+  prove(alpha: Uint8Array): Uint8Array {
+    if (!this.secretKey) {
+      throw new Error("Secret key not set");
+    }
+    const pi = p256._prove(this.secretKey, Array.from(alpha));
+    return Buffer.from(pi);
+  }
 
-//   prove(secretKey: Uint8Array, alpha: Uint8Array): Uint8Array {
-//     const secretKeyHex = VRF.toHex(secretKey);
-//     const alphaHex = VRF.toHex(alpha);
-//     const piHex = p256.prove(secretKeyHex, alphaHex);
-//     return VRF.fromHex(piHex);
-//   }
+  proofToHash(pi: Uint8Array): Uint8Array {
+    const beta = p256._proof_to_hash(Array.from(pi));
+    return Buffer.from(beta);
+  }
 
-//   proofToHash(pi: Uint8Array): Uint8Array {
-//     const piHex = VRF.toHex(pi);
-//     const betaHex = p256.proof_to_hash(piHex);
-//     return VRF.fromHex(betaHex);
-//   }
+  hash(alpha: Uint8Array): { beta: Uint8Array; pi: Uint8Array } {
+    if (!this.secretKey) {
+      throw new Error("Secret key not set");
+    }
+    const pi = p256._prove(this.secretKey, Array.from(alpha));
+    const beta = p256._proof_to_hash(pi);
+    return { beta: Buffer.from(beta), pi: Buffer.from(pi) };
+  }
 
-//   verify(publicKey: Uint8Array, alpha: Uint8Array, pi: Uint8Array): boolean {
-//     const publicKeyHex = VRF.toHex(publicKey);
-//     const alphaHex = VRF.toHex(alpha);
-//     const piHex = VRF.toHex(pi);
-//     try {
-//       p256.verify(publicKeyHex, piHex, alphaHex);
-//       return true;
-//     } catch (error) {
-//       return false;
-//     }
-//   }
-
-//   static validatePublicKey(publicKey: Uint8Array): boolean {
-//     const publicKeyHex = VRF.toHex(publicKey);
-//     try {
-//       p256.validate_key(publicKeyHex);
-//       return true;
-//     } catch (error) {
-//       return false;
-//     }
-//   }
-// }
-
-// export default VRF;
+  verify(pi: Uint8Array, alpha: Uint8Array, beta: Uint8Array): boolean {
+    const publickey = p256.to_point(this.publicKey);
+    if (publickey === "INVALID") {
+      throw new Error("Invalid public key");
+    }
+    const _beta = p256._verify(publickey, Array.from(pi), Array.from(alpha));
+    return (
+      beta.length === _beta.length &&
+      beta.every((value, index) => value === _beta[index])
+    );
+  }
+}
+export default VRF;
