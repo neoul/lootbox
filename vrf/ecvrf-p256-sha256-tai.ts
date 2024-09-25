@@ -18,7 +18,7 @@ int_to_string = n.toArray('be', len)
 import BN from "bn.js";
 import { sha256 } from "js-sha256";
 import * as elliptic from "elliptic";
-import { toHexString, toNumberArray } from "./utils";
+import { toHexString, toNumberArray } from "./utilities";
 
 type Point = elliptic.curve.base.BasePoint;
 

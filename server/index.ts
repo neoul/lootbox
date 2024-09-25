@@ -1,16 +1,19 @@
 import "reflect-metadata";
-import * as dotenv from "dotenv";
 import Fastify from "fastify";
 import { TypeBoxTypeProvider } from "@fastify/type-provider-typebox";
 import { Command } from "commander";
 import { Config } from "./config";
 
-import "./utils";
 import { configureRoutes } from "./routes/movie.route";
 import { configureDatabase } from "./database/db.config";
 
 import { loggingConfig } from "./logging";
 import { setupLootbox } from "./routes/lootbox";
+import { loadSecretKey } from "../vrf/utilities";
+
+// (BigInt.prototype as any).toJSON = function () {
+//   return this.toString();
+// };
 
 type Args = {
   config: string;
@@ -44,6 +47,8 @@ async function run({ config, secret_key_file }: Args) {
   let configObj: Config = config
     ? Config.from_yaml_file(config)
     : Config.from_env();
+  const secretKey = loadSecretKey(secret_key_file);
+  console.log(secretKey);
   const instance = Fastify({
     logger: loggingConfig[configObj.node_env] ?? true,
     // bodyLimit: 1000000, // 1MB
