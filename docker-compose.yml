@@ -10,7 +10,7 @@ services:
         COPY tsconfig.json package.json pnpm-lock.yaml server vrf /app
         RUN pnpm install
         EXPOSE 8282
-        CMD pnpm run start:dev
+        CMD pnpm run start:dev -s .key/abcd
     ports:
       - 8282:8282
     environment:

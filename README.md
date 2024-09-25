@@ -1,11 +1,18 @@
 
 
 ```bash
-set -a
-source .env.development
-set +a
+# set -a
+# source .env.development
+# set +a
 # pnpm migration:create lootbox_rolls
-pnpm migration:run
+# pnpm migration:run
+
+# generate key
+aptos key generate --assume-yes --vanity-prefix abcd --output-file .key/abcd
+pnpm install
+pnpm build
+pnpm start:dev -s .key/abcd
+
 ```
 
 ```bash

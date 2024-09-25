@@ -155,7 +155,12 @@ export const setupLootbox = async (
         `Lootbox roll created: ${JSON.stringify(result.raw[0])}`
       );
       if (result.raw.length === 0) {
-        return reply.code(500).send({ error: "Internal Server Error", message: `error message test` });
+        return reply
+          .code(500)
+          .send({
+            error: "Internal Server Error",
+            message: `error message test`,
+          });
       }
       const raw = result.raw[0];
       const response: TLootboxRollReply = {
