@@ -10,16 +10,16 @@ import {
   LootboxRandomNumber,
 } from "../database/entities/LootboxRoll.entity";
 import {
-  LootboxRollQuerySchema,
-  LootboxRollBodySchema,
-  LootboxRollReplySchema,
-  LootboxRollBodyType,
-  LootboxRollReplyType,
-  LootboxQueryStringType,
-  LootboxRollArrayReplyType,
-  LootboxRollArrayReplySchema,
-  ErrorType,
-  ErrorSchema,
+  SLootboxRollQuery,
+  SLootboxRollBody,
+  SLootboxRollReply,
+  TLootboxRollBody,
+  TLootboxRollReply,
+  TLootboxRollQuery,
+  TLootboxRollArrayReply,
+  SLootboxRollArrayReply,
+  TError,
+  SError,
 } from "../types";
 import { Static, Type } from "@sinclair/typebox";
 
@@ -33,9 +33,9 @@ const handler_v1 = async (request: UserRequest, reply: FastifyReply) => {
 };
 
 interface IPostLootboxRoll {
-  Body: LootboxRollBodyType;
+  Body: TLootboxRollBody;
   Reply: {
-    200: LootboxRollReplyType;
+    200: TLootboxRollReply;
     302: { url: string };
     "4xx": { error: string };
     "5xx": { error: string };
@@ -43,12 +43,30 @@ interface IPostLootboxRoll {
 }
 
 const SPostLootboxRoll = {
-  body: LootboxRollBodySchema,
+  body: SLootboxRollBody,
   response: {
-    200: LootboxRollReplySchema,
-    "4xx": ErrorSchema,
-    "5xx": ErrorSchema,
+    200: SLootboxRollReply,
+    "4xx": SError,
+    "5xx": SError,
   },
+};
+
+const SGetLootbox = {
+  querystring: SLootboxRollQuery,
+  response: {
+    200: SLootboxRollArrayReply,
+    "4xx": SError,
+    "5xx": SError,
+  },
+};
+
+type TGetLootbox = {
+  Querystring: TLootboxRollQuery;
+  Reply: {
+    200: TLootboxRollArrayReply;
+    "4xx": TError;
+    "5xx": TError;
+  };
 };
 
 export const setupLootbox = async (
@@ -58,32 +76,10 @@ export const setupLootbox = async (
   const lootboxRollRepository: Repository<LootboxRoll> =
     instance.orm.getRepository(LootboxRoll);
   // instance.get("/", handler_v1);
-  instance.get<{
-    Querystring: LootboxQueryStringType;
-    Reply: {
-      200: LootboxRollArrayReplyType;
-      "4xx": ErrorType;
-      "5xx": ErrorType;
-    };
-  }>(
+  instance.get<TGetLootbox>(
     "/",
     {
-      schema: {
-        querystring: LootboxRollQuerySchema,
-        response: {
-          200: LootboxRollArrayReplySchema,
-          "4xx": ErrorSchema,
-          "5xx": ErrorSchema,
-        },
-      },
-      // preValidation: (request, reply, done) => {
-      //   const { user_id, roll_id } = request.query;
-      //   if (user_id && roll_id) {
-      //     done(new Error("Only one of 'user_id' and 'roll_id' can be provided"));
-      //   } else {
-      //     done();
-      //   }
-      // },
+      schema: SGetLootbox,
     },
     async (request, reply) => {
       try {
@@ -134,12 +130,16 @@ export const setupLootbox = async (
       }
     }
   );
-  instance.post<IPostLootboxRoll>("/", {
-    schema: SPostLootboxRoll,
-    handler: async (request, reply) => {
+
+  instance.post<IPostLootboxRoll>(
+    "/roll",
+    {
+      schema: SPostLootboxRoll,
+    },
+    async (request, reply) => {
       const { user_id, roll_id, roll_count } = request.body;
       const sequence = String(BigInt(Date.now()));
-      const response: LootboxRollReplyType = {
+      const response: TLootboxRollReply = {
         user_id,
         roll_id,
         roll_count,
@@ -154,6 +154,6 @@ export const setupLootbox = async (
         ),
       };
       reply.code(200).send(response);
-    },
-  });
+    }
+  );
 };

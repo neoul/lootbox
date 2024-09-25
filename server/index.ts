@@ -1,19 +1,13 @@
 import "reflect-metadata";
 import * as dotenv from "dotenv";
 import Fastify from "fastify";
-import {
-  TypeBoxTypeProvider,
-  TypeBoxValidatorCompiler,
-} from "@fastify/type-provider-typebox";
+import { TypeBoxTypeProvider } from "@fastify/type-provider-typebox";
+import "./utils";
 import { configureRoutes } from "./routes/movie.route";
 import { configureDatabase } from "./database/db.config";
 
 import { loggingConfig } from "./logging";
 import { setupLootbox } from "./routes/lootbox";
-// JSON.stringify for BigInt
-// (BigInt.prototype as any).toJSON = function () {
-//   return this.toString();
-// };
 
 async function run() {
   const environment = process.env.NODE_ENV || "development";
