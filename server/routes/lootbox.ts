@@ -32,16 +32,6 @@ const handler_v1 = async (request: UserRequest, reply: FastifyReply) => {
   reply.code(200).send({ success: true, data: {} });
 };
 
-interface IPostLootboxRoll {
-  Body: TLootboxRollBody;
-  Reply: {
-    200: TLootboxRollReply;
-    302: { url: string };
-    "4xx": { error: string };
-    "5xx": { error: string };
-  };
-}
-
 const SPostLootboxRoll = {
   body: SLootboxRollBody,
   response: {
@@ -50,6 +40,16 @@ const SPostLootboxRoll = {
     "5xx": SError,
   },
 };
+
+interface IPostLootboxRoll {
+  Body: TLootboxRollBody;
+  Reply: {
+    200: TLootboxRollReply;
+    302: { url: string };
+    "4xx": TError;
+    "5xx": TError;
+  };
+}
 
 const SGetLootbox = {
   querystring: SLootboxRollQuery,
@@ -60,7 +60,7 @@ const SGetLootbox = {
   },
 };
 
-type TGetLootbox = {
+type IGetLootbox = {
   Querystring: TLootboxRollQuery;
   Reply: {
     200: TLootboxRollArrayReply;
@@ -76,7 +76,7 @@ export const setupLootbox = async (
   const lootboxRollRepository: Repository<LootboxRoll> =
     instance.orm.getRepository(LootboxRoll);
   // instance.get("/", handler_v1);
-  instance.get<TGetLootbox>(
+  instance.get<IGetLootbox>(
     "/",
     {
       schema: SGetLootbox,
@@ -138,17 +138,34 @@ export const setupLootbox = async (
     },
     async (request, reply) => {
       const { user_id, roll_id, roll_count } = request.body;
-      const sequence = String(BigInt(Date.now()));
+      const roll = new LootboxRoll();
+      roll.user_id = user_id;
+      roll.roll_id = String(roll_id);
+      roll.roll_count = roll_count;
+      roll.server_nonce = Math.floor(Math.random() * 0x100000000) - 0x80000000;
+      roll.server_timestamp = new Date();
+      const result = await lootboxRollRepository
+        .createQueryBuilder()
+        .insert()
+        .into(LootboxRoll)
+        .values(roll)
+        .returning("*")
+        .execute();
+      instance.log.info(
+        `Lootbox roll created: ${JSON.stringify(result.raw[0])}`
+      );
+      if (result.raw.length === 0) {
+        return reply.code(500).send({ error: "Internal Server Error", message: `error message test` });
+      }
+      const raw = result.raw[0];
       const response: TLootboxRollReply = {
+        sequence: raw.sequence,
+        nonce: raw.nonce,
         user_id,
         roll_id,
         roll_count,
-        server_nonce: String(
-          Math.floor(Math.random() * Number.MAX_SAFE_INTEGER)
-        ),
-        server_timestamp: new Date().toISOString(),
-        sequence,
-        nonce: "database nonce",
+        server_nonce: raw.server_nonce,
+        server_timestamp: raw.server_timestamp.toISOString(),
         random_numbers: Array(roll_count).fill(
           String(BigInt(Math.floor(Math.random() * Number.MAX_SAFE_INTEGER)))
         ),

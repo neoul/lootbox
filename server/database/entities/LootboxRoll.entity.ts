@@ -13,22 +13,25 @@ import {
 @Entity("lootbox_rolls")
 export class LootboxRoll {
   @PrimaryGeneratedColumn({ type: "bigint" })
-  sequence!: bigint;
+  sequence!: string;
 
-  @Column({ length: 32 })
-  nonce!: string;
+  @Column({
+    type: "integer",
+    default: () => "floor(random() * 4294967296) - 2147483648",
+  })
+  nonce!: number;
 
   @Column("uuid")
   user_id!: string;
 
   @Column("bigint")
-  roll_id!: bigint;
+  roll_id!: string;
 
   @Column("int")
   roll_count!: number;
 
-  @Column("bigint")
-  server_nonce!: bigint;
+  @Column({ type: "integer" })
+  server_nonce!: number;
 
   @Column("timestamp")
   server_timestamp!: Date;
@@ -39,20 +42,23 @@ export class LootboxRoll {
   @UpdateDateColumn({ type: "timestamp" })
   updated_at!: Date;
 
-  @OneToMany(() => LootboxRandomNumber, (randomNumber) => randomNumber.lootboxRoll)
+  @OneToMany(
+    () => LootboxRandomNumber,
+    (randomNumber) => randomNumber.lootboxRoll
+  )
   random_numbers!: LootboxRandomNumber[];
 }
 
 @Entity("lootbox_random_numbers")
 export class LootboxRandomNumber {
   @PrimaryColumn({ type: "bigint" })
-  lootbox_roll_sequence!: bigint;
+  lootbox_roll_sequence!: string;
 
   @PrimaryColumn()
   sequence_number!: number;
 
   @Column("bigint")
-  random_number!: bigint;
+  random_number!: string;
 
   @ManyToOne(() => LootboxRoll, (lootboxRoll) => lootboxRoll.random_numbers)
   @JoinColumn({ name: "lootbox_roll_sequence" })

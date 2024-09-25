@@ -19,7 +19,7 @@ export const SLootboxRollReply = Type.Intersect([
   SLootboxRollBody,
   Type.Object({
     sequence: Type.String(),
-    nonce: Type.String(),
+    nonce: Type.Number(),
     server_nonce: Type.String(),
     server_timestamp: Type.String({ format: "date-time" }),
     random_numbers: Type.Array(Type.String()),

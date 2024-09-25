@@ -6,11 +6,11 @@ export class LootboxRolls1727155977457 implements MigrationInterface {
     await queryRunner.query(`
       CREATE TABLE lootbox_rolls (
         sequence BIGSERIAL PRIMARY KEY,
-        nonce VARCHAR(32) NOT NULL,
+        nonce INTEGER NOT NULL DEFAULT floor(random() * 4294967296) - 2147483648,
         user_id UUID NOT NULL,
         roll_id BIGINT NOT NULL,
         roll_count INTEGER NOT NULL,
-        server_nonce BIGINT NOT NULL,
+        server_nonce INTEGER NOT NULL,
         server_timestamp TIMESTAMP NOT NULL,
         created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
         updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
