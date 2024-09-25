@@ -22,7 +22,7 @@ import { toHexString, toNumberArray } from "./utilities";
 
 type Point = elliptic.curve.base.BasePoint;
 
-const EC = new elliptic.ec("p256");
+export const EC = new elliptic.ec("p256");
 const suite = [0x01];
 
 export function to_point(s: number[]): Point | "INVALID" {
@@ -194,6 +194,18 @@ export function keygen() {
     public_key,
   };
 }
+
+export function genKeygen() {
+  const keypair = EC.genKeyPair();
+  const secret_key = keypair.getPrivate();
+  const public_key = keypair.getPublic("array");
+  return {
+    secret_key,
+    public_key,
+  };
+}
+
+
 
 export function prove(secret_key: string, alpha: string): string {
   const pi = _prove(new BN(secret_key, "hex"), toNumberArray(alpha, "hex"));

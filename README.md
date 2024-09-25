@@ -1,4 +1,4 @@
-
+# VRF Lootbox
 
 ```bash
 # set -a
@@ -7,12 +7,13 @@
 # pnpm migration:create lootbox_rolls
 # pnpm migration:run
 
-# generate key
-aptos key generate --assume-yes --vanity-prefix abcd --output-file .key/abcd
+docker compose up --build
+
+#  or
+docker compose up db -d
 pnpm install
 pnpm build
-pnpm start:dev -s .key/abcd
-
+pnpm start:dev -s .key/abcd --new_key
 ```
 
 ```bash

@@ -11,25 +11,25 @@ interface IVRF {
 }
 
 export class VRF implements IVRF {
-  private privateKey: number[];
-  private publicKey: number[];
+  private publicKeyHex: string;
+  private publickey: number[];
   private secretKey: BN;
 
-  constructor(secretKey: string) {
-    const privateKeyBuf = this.extractRawPrivateKey(secretKey);
-    // const privateKeyBuf = Buffer.from(secretKey, "hex");
-    this.privateKey = Array.from(privateKeyBuf);
-    this.secretKey = new BN(this.privateKey);
-    const privateKey = crypto.createPrivateKey({
-      key: privateKeyBuf,
-      format: "der",
-      type: "pkcs8",
-    });
-    const publicKey = crypto.createPublicKey(privateKey);
-    const publicKeyRaw = publicKey.export({ format: "der", type: "spki" });
-    this.publicKey = Array.from(this.compressPublicKey(publicKeyRaw));
-    console.log("Public key", this.publicKey.toString());
-    p256._validate_key(this.publicKey);
+  constructor(secretKey?: string) {
+    if (!secretKey) {
+      const keypair = p256.EC.genKeyPair();
+      this.secretKey = keypair.getPrivate();
+      this.publicKeyHex = keypair.getPublic("hex");
+      this.publickey = keypair.getPublic(true, "array");
+    } else {
+      this.secretKey = new BN(secretKey, "hex");
+      const derivedPublicKey = p256.EC.keyFromPrivate(
+        this.secretKey.toBuffer()
+      ).getPublic();
+      this.publickey = derivedPublicKey.encode("array", true);
+      this.publicKeyHex = derivedPublicKey.encode("hex", true);
+      p256._validate_key(this.publickey);
+    }
   }
 
   private compressPublicKey(publicKeyRaw: Buffer): Buffer {
@@ -37,41 +37,8 @@ export class VRF implements IVRF {
     return Buffer.concat([Buffer.from([prefix]), publicKeyRaw.slice(1, 33)]);
   }
 
-  extractRawPrivateKey(pemPrivateKey: string): Buffer {
-    // Remove PEM headers and decode base64
-    console.log("pemPrivateKey", pemPrivateKey);
-    // const pemContent = pemPrivateKey
-    //   .replace(/-----BEGIN PRIVATE KEY-----/, '')
-    //   .replace(/-----END PRIVATE KEY-----/, '')
-    //   .replace(/\n/g, '');
-    // console.log("pemContent", pemContent);
-    // const derBuffer = Buffer.from(pemContent, 'base64');
-    const cleanedPemPrivateKey = pemPrivateKey
-    .replace(/\n/g, '') // Remove all newlines
-    .replace(/-----BEGIN PRIVATE KEY-----/, '-----BEGIN PRIVATE KEY-----\n')
-    .replace(/-----END PRIVATE KEY-----/, '\n-----END PRIVATE KEY-----\n');
-    // Parse the DER-encoded key
-    const parsedKey = crypto.createPrivateKey({
-      key: cleanedPemPrivateKey,
-      format: 'pem',
-      type: 'pkcs8'
-    });
-  
-    // Export the key in DER format
-    const derKey = parsedKey.export({
-      format: 'der',
-      type: 'sec1'
-    });
-  
-    // Decode the ASN.1 structure
-    const decoded = derKey.subarray(7, 39);
-  
-    // Extract the raw private key
-    return decoded;
-  }
-
   getPublicKey() {
-    return Buffer.from(this.publicKey).toString("hex");
+    return this.publicKeyHex;
   }
 
   prove(alpha: Uint8Array): Uint8Array {
@@ -97,7 +64,7 @@ export class VRF implements IVRF {
   }
 
   verify(pi: Uint8Array, alpha: Uint8Array, beta: Uint8Array): boolean {
-    const publickey = p256.to_point(this.publicKey);
+    const publickey = p256.to_point(this.publickey);
     if (publickey === "INVALID") {
       throw new Error("Invalid public key");
     }

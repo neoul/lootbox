@@ -2,17 +2,15 @@ import "reflect-metadata";
 import Fastify from "fastify";
 import { TypeBoxTypeProvider } from "@fastify/type-provider-typebox";
 import { Command } from "commander";
-import {
-  Config,
-  generateP256KeyPair,
-  generateSecp256r1KeyPair,
-} from "./config";
+import * as fs from "fs";
+import { Config } from "./config";
 
 import { configureRoutes } from "./routes/movie.route";
 import { configureDatabase } from "./database/db.config";
 
 import { loggingConfig } from "./logging";
 import { setupLootbox } from "./routes/lootbox";
+import VRF from "../vrf";
 
 // (BigInt.prototype as any).toJSON = function () {
 //   return this.toString();
@@ -20,7 +18,7 @@ import { setupLootbox } from "./routes/lootbox";
 
 type Args = {
   config: string;
-  new_box: boolean;
+  new_key: boolean;
   secret_key_file: string;
 };
 
@@ -28,7 +26,7 @@ export const program = new Command();
 program.name("lootbox");
 program.description("Supervlabs Lootbox");
 program.option("-c, --config <config>", "Path to a yaml config file");
-program.option("-n, --new_box", "Create a new lootbox with the new key");
+program.option("-n, --new_key", "Create a new lootbox with the new key");
 program.requiredOption(
   "-s, --secret_key_file <secret_key_file>",
   "Secret key file path"
@@ -47,19 +45,19 @@ program.action(async (args: Args) => {
 
 program.parse();
 
-async function run({ config, new_box, secret_key_file }: Args) {
-  console.log("Starting server...", config, new_box, secret_key_file);
+async function run({ config, new_key, secret_key_file }: Args) {
+  console.log("Starting server...", config, new_key, secret_key_file);
   let configObj: Config = config
     ? Config.from_yaml_file(config)
     : Config.from_env();
-  const keypair = generateSecp256r1KeyPair();
-  // const keypair = loadPrivateKey(secret_key_file);
+  const secretkey = fs.readFileSync(secret_key_file, "utf8");
+  const vrf = new_key ? new VRF() : new VRF(secretkey);
   const instance = Fastify({
     logger: loggingConfig[configObj.node_env] ?? true,
     // bodyLimit: 1000000, // 1MB
   }).withTypeProvider<TypeBoxTypeProvider>();
   configureDatabase(instance);
   configureRoutes(instance);
-  instance.register(setupLootbox, { prefix: "/lootbox", keypair });
+  instance.register(setupLootbox, { prefix: "/lootbox", vrf });
   return await instance.listen({ host: configObj.host, port: configObj.port });
 }

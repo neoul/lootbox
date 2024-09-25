@@ -22,7 +22,22 @@ import {
   SError,
 } from "../types";
 import VRF from "../../vrf";
-import { generateSecp256r1KeyPair } from "../config";
+
+function sliceAndConvertToBigInt(array: Uint8Array): string[] {
+  const result: string[] = [];
+
+  for (let i = 0; i < array.length; i += 8) {
+    const slice = array.slice(i, i + 8);
+    const bigIntValue = BigInt(
+      "0x" +
+        Array.from(slice)
+          .map((byte) => byte.toString(16).padStart(2, "0"))
+          .join("")
+    );
+    result.push(bigIntValue.toString());
+  }
+  return result;
+}
 
 interface UserRequest extends FastifyRequest {
   // Define any custom properties for the request here
@@ -74,8 +89,8 @@ export const setupLootbox = async (
   instance: FastifyInstance,
   opts: FastifyPluginOptions
 ) => {
-  const keypair = opts.keypair as ReturnType<typeof generateSecp256r1KeyPair>;
-  const vrf = new VRF(keypair.privateKey);
+  console.log(`options`, opts);
+  const vrf = opts.vrf as VRF;
   const lootboxRollRepository: Repository<LootboxRoll> =
     instance.orm.getRepository(LootboxRoll);
   // instance.get("/", handler_v1);
@@ -138,6 +153,12 @@ export const setupLootbox = async (
     "/roll",
     {
       schema: SPostLootboxRoll,
+      preValidation: async (request, reply) => {
+        const { roll_count } = request.body;
+        if (roll_count <= 0 || roll_count > 8) {
+          throw new Error("Invalid roll_count");
+        }
+      },
     },
     async (request, reply) => {
       const { user_id, roll_id, roll_count } = request.body;
@@ -158,27 +179,29 @@ export const setupLootbox = async (
         `Lootbox roll created: ${JSON.stringify(result.raw[0])}`
       );
       if (result.raw.length === 0) {
-        return reply
-          .code(500)
-          .send({
-            error: "Internal Server Error",
-            message: `error message test`,
-          });
+        return reply.code(500).send({
+          error: "Internal Server Error",
+          message: `error message test`,
+        });
       }
       const raw = result.raw[0];
-      const response: TLootboxRollReply = {
+      const server_timestamp = raw.server_timestamp.toISOString();
+      const alpha = `${raw.sequence},${raw.nonce},${raw.user_id},${raw.roll_id},${raw.roll_count},${raw.server_nonce},${server_timestamp}`;
+      const { beta, pi } = vrf.hash(
+        Uint8Array.from(new TextEncoder().encode(alpha))
+      );
+
+      const resp: TLootboxRollReply = {
         sequence: raw.sequence,
         nonce: raw.nonce,
         user_id,
         roll_id,
         roll_count,
         server_nonce: raw.server_nonce,
-        server_timestamp: raw.server_timestamp.toISOString(),
-        random_numbers: Array(roll_count).fill(
-          String(BigInt(Math.floor(Math.random() * Number.MAX_SAFE_INTEGER)))
-        ),
+        server_timestamp: server_timestamp,
+        random_numbers: sliceAndConvertToBigInt(beta),
       };
-      reply.code(200).send(response);
+      return reply.code(200).send(resp);
     }
   );
 };
