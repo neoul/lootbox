@@ -13,7 +13,8 @@ export class LootboxRolls1727155977457 implements MigrationInterface {
         server_nonce INTEGER NOT NULL,
         server_timestamp TIMESTAMP NOT NULL,
         created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
-        updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
+        updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+        pi VARCHAR(162) NULL,
       )
     `);
 

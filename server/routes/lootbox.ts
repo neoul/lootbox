@@ -28,12 +28,13 @@ function sliceAndConvertToBigInt(array: Uint8Array): string[] {
 
   for (let i = 0; i < array.length; i += 8) {
     const slice = array.slice(i, i + 8);
-    const bigIntValue = BigInt(
+    let bigIntValue = BigInt(
       "0x" +
         Array.from(slice)
           .map((byte) => byte.toString(16).padStart(2, "0"))
           .join("")
     );
+    bigIntValue = bigIntValue - BigInt("9223372036854775808");
     result.push(bigIntValue.toString());
   }
   return result;
@@ -155,7 +156,7 @@ export const setupLootbox = async (
       schema: SPostLootboxRoll,
       preValidation: async (request, reply) => {
         const { roll_count } = request.body;
-        if (roll_count <= 0 || roll_count > 8) {
+        if (roll_count <= 0 || roll_count > 4) {
           throw new Error("Invalid roll_count");
         }
       },
@@ -190,6 +191,29 @@ export const setupLootbox = async (
       const { beta, pi } = vrf.hash(
         Uint8Array.from(new TextEncoder().encode(alpha))
       );
+      console.log("pi", pi.length);
+      const random_numbers = sliceAndConvertToBigInt(beta);
+      const rand_values = random_numbers.map((randnum, index) => ({
+        lootbox_roll_sequence: raw.sequence,
+        sequence_number: index + 0,
+        random_number: randnum,
+      }));
+      await lootboxRollRepository
+        .createQueryBuilder()
+        .update(LootboxRoll)
+        .set({ pi: Buffer.from(pi).toString("hex") })
+        .where({ sequence: raw.sequence })
+        .execute();
+
+      await lootboxRollRepository
+        .createQueryBuilder()
+        .insert()
+        .into(LootboxRandomNumber)
+        .values(rand_values)
+        .execute();
+
+      // const ok = vrf.verify(pi, Uint8Array.from(new TextEncoder().encode(alpha)), beta);
+      // instance.log.warn(`ok ${ok}`);
 
       const resp: TLootboxRollReply = {
         sequence: raw.sequence,
@@ -199,7 +223,7 @@ export const setupLootbox = async (
         roll_count,
         server_nonce: raw.server_nonce,
         server_timestamp: server_timestamp,
-        random_numbers: sliceAndConvertToBigInt(beta),
+        random_numbers: random_numbers,
       };
       return reply.code(200).send(resp);
     }
