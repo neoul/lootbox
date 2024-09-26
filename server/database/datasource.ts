@@ -14,7 +14,7 @@ const databaseConfig = {
   migrations: ["server/database/migrations/*.ts"],
   subscribers: [],
   migrationsRun: process.env.DATABASE_SYNCHRONIZE !== "true",
-  entities: ["server/**/*.entity{.ts,.js}"],
+  entities: ["server/**/entities/*{.ts,.js}"],
 };
 
 export const datasource = new DataSource(databaseConfig as DataSourceOptions);

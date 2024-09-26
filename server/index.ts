@@ -8,7 +8,7 @@ import { Config } from "./config";
 import { setupDatabase } from "./database/db.config";
 
 import { loggingConfig } from "./logging";
-import { setupLootboxRoll } from "./routes/lootbox";
+import { setupLootboxRoll } from "./routes/lootboxRoll";
 import VRF from "../vrf";
 
 // (BigInt.prototype as any).toJSON = function () {
