@@ -22,6 +22,8 @@ export const SLootboxRollReply = Type.Intersect([
     nonce: Type.Number(),
     server_nonce: Type.String(),
     server_timestamp: Type.String({ format: "date-time" }),
+    pi: Type.Union([Type.String(), Type.Null()]),
+    beta: Type.Union([Type.String(), Type.Null()]),
     random_numbers: Type.Array(Type.String()),
   }),
 ]);

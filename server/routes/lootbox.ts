@@ -86,7 +86,11 @@ type IGetLootbox = {
   };
 };
 
-export const setupLootbox = async (
+export async function setupLootboxRoll(instance: FastifyInstance, vrf: VRF) {
+  instance.register(setupLootbox, { prefix: "/lootbox/roll", vrf });
+}
+
+const setupLootbox = async (
   instance: FastifyInstance,
   opts: FastifyPluginOptions
 ) => {
@@ -133,6 +137,8 @@ export const setupLootbox = async (
           roll_count: lootboxRoll.roll_count,
           server_nonce: String(lootboxRoll.server_nonce),
           server_timestamp: lootboxRoll.server_timestamp.toISOString(),
+          pi: lootboxRoll.pi,
+          beta: lootboxRoll.beta,
           random_numbers: lootboxRoll.random_numbers.map((randomNumber) =>
             String(randomNumber.random_number)
           ),
@@ -151,7 +157,7 @@ export const setupLootbox = async (
   );
 
   instance.post<IPostLootboxRoll>(
-    "/roll",
+    "/",
     {
       schema: SPostLootboxRoll,
       preValidation: async (request, reply) => {
@@ -206,6 +212,8 @@ export const setupLootbox = async (
       const { beta, pi } = vrf.hash(
         Uint8Array.from(new TextEncoder().encode(alpha))
       );
+      const piStr = Buffer.from(pi).toString("hex");
+      const betaStr = Buffer.from(beta).toString("hex");
 
       const random_numbers = sliceAndConvertToBigInt(beta);
       const rand_values = random_numbers.map((randnum, index) => ({
@@ -216,7 +224,10 @@ export const setupLootbox = async (
       await lootboxRollRepository
         .createQueryBuilder()
         .update(LootboxRoll)
-        .set({ pi: Buffer.from(pi).toString("hex") })
+        .set({
+          pi: piStr,
+          beta: betaStr,
+        })
         .where({ sequence: curRoll.sequence })
         .execute();
 
@@ -235,6 +246,8 @@ export const setupLootbox = async (
         roll_count,
         server_nonce: curRoll.server_nonce,
         server_timestamp: server_timestamp,
+        pi: piStr,
+        beta: betaStr,
         random_numbers: random_numbers,
       };
       return reply.code(200).send(resp);

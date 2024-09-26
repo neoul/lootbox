@@ -5,11 +5,10 @@ import { Command } from "commander";
 import * as fs from "fs";
 import { Config } from "./config";
 
-import { configureRoutes } from "./routes/movie.route";
-import { configureDatabase } from "./database/db.config";
+import { setupDatabase } from "./database/db.config";
 
 import { loggingConfig } from "./logging";
-import { setupLootbox } from "./routes/lootbox";
+import { setupLootboxRoll } from "./routes/lootbox";
 import VRF from "../vrf";
 
 // (BigInt.prototype as any).toJSON = function () {
@@ -56,8 +55,7 @@ async function run({ config, new_key, secret_key_file }: Args) {
     logger: loggingConfig[configObj.node_env] ?? true,
     // bodyLimit: 1000000, // 1MB
   }).withTypeProvider<TypeBoxTypeProvider>();
-  configureDatabase(instance);
-  configureRoutes(instance);
-  instance.register(setupLootbox, { prefix: "/lootbox", vrf });
+  setupDatabase(instance);
+  setupLootboxRoll(instance, vrf);
   return await instance.listen({ host: configObj.host, port: configObj.port });
 }

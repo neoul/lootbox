@@ -39,6 +39,9 @@ export class LootboxRoll {
   @Column({ type: "varchar", length: 162, nullable: true })
   pi!: string | null;
 
+  @Column({ type: "varchar", length: 64, nullable: true })
+  beta!: string | null;
+
   @CreateDateColumn({ type: "timestamp" })
   created_at!: Date;
 
