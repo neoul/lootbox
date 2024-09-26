@@ -31,14 +31,14 @@ export const SLootboxRollReply = Type.Intersect([
 export const SLootboxRollQuery = Type.Object({
   user_id: Type.Optional(Type.String({ format: "uuid" })),
   roll_id: Type.Optional(
-    Type.Union([
-      Type.Number(),
-      Type.String(),
-      Type.Array(Type.Union([Type.Number(), Type.String()])),
-    ])
+    Type.Union([Type.String(), Type.Array(Type.String())])
   ),
   limit: Type.Optional(Type.Number({ minimum: 1, maximum: 100, default: 10 })),
   offset: Type.Optional(Type.Number({ minimum: 0, default: 0 })),
+});
+
+export const SLootboxRollParams = Type.Object({
+  sequence: Type.String(),
 });
 
 export const SLootboxRollArrayReply = Type.Array(SLootboxRollReply);
@@ -60,6 +60,7 @@ export const SError = Type.Object({
 });
 
 export type TLootboxRollQuery = Static<typeof SLootboxRollQuery>;
+export type TLootboxRollParams = Static<typeof SLootboxRollParams>;
 export type TLootboxRollBody = Static<typeof SLootboxRollBody>;
 export type TLootboxRollReply = Static<typeof SLootboxRollReply>;
 export type TLootboxRollArrayReply = Static<typeof SLootboxRollArrayReply>;

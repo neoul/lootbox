@@ -20,6 +20,8 @@ import {
   SLootboxRollArrayReply,
   TError,
   SError,
+  SLootboxRollParams,
+  TLootboxRollParams,
 } from "../types";
 import VRF from "../../vrf";
 
@@ -40,15 +42,6 @@ function sliceAndConvertToBigInt(array: Uint8Array): string[] {
   return result;
 }
 
-interface UserRequest extends FastifyRequest {
-  // Define any custom properties for the request here
-}
-
-const handler_v1 = async (request: UserRequest, reply: FastifyReply) => {
-  // Your handler logic here
-  reply.code(200).send({ success: true, data: {} });
-};
-
 const SPostLootboxRoll = {
   body: SLootboxRollBody,
   response: {
@@ -58,17 +51,16 @@ const SPostLootboxRoll = {
   },
 };
 
-interface IPostLootboxRoll {
-  Body: TLootboxRollBody;
-  Reply: {
-    200: TLootboxRollReply;
-    302: { url: string };
-    "4xx": TError;
-    "5xx": TError;
-  };
-}
+const SGetLootboxRoll = {
+  params: SLootboxRollParams,
+  response: {
+    200: SLootboxRollReply,
+    "4xx": SError,
+    "5xx": SError,
+  },
+};
 
-const SGetLootbox = {
+const SGetLootboxRolls = {
   querystring: SLootboxRollQuery,
   response: {
     200: SLootboxRollArrayReply,
@@ -77,7 +69,25 @@ const SGetLootbox = {
   },
 };
 
-type IGetLootbox = {
+interface IPostLootboxRoll {
+  Body: TLootboxRollBody;
+  Reply: {
+    200: TLootboxRollReply;
+    "4xx": TError;
+    "5xx": TError;
+  };
+}
+
+type IGetLootboxRoll = {
+  Params: TLootboxRollParams;
+  Reply: {
+    200: TLootboxRollReply;
+    "4xx": TError;
+    "5xx": TError;
+  };
+};
+
+type IGetLootboxRolls = {
   Querystring: TLootboxRollQuery;
   Reply: {
     200: TLootboxRollArrayReply;
@@ -87,28 +97,27 @@ type IGetLootbox = {
 };
 
 export async function setupLootboxRoll(instance: FastifyInstance, vrf: VRF) {
-  instance.register(setupLootbox, { prefix: "/lootbox/roll", vrf });
+  instance.register(setupLootbox, { prefix: "/lootbox", vrf });
 }
 
 const setupLootbox = async (
   instance: FastifyInstance,
   opts: FastifyPluginOptions
 ) => {
-  console.log(`options`, opts);
   const vrf = opts.vrf as VRF;
-  const lootboxRollRepository: Repository<LootboxRoll> =
+  const rollRepo: Repository<LootboxRoll> =
     instance.orm.getRepository(LootboxRoll);
-  // instance.get("/", handler_v1);
-  instance.get<IGetLootbox>(
-    "/",
+
+  instance.get<IGetLootboxRolls>(
+    "/rolls",
     {
-      schema: SGetLootbox,
+      schema: SGetLootboxRolls,
     },
     async (request, reply) => {
       try {
         const { user_id, roll_id, limit = 10, offset = 0 } = request.query;
 
-        const query = lootboxRollRepository
+        const query = rollRepo
           .createQueryBuilder("lootboxRoll")
           .leftJoinAndSelect("lootboxRoll.random_numbers", "randomNumber")
           .take(limit)
@@ -128,23 +137,25 @@ const setupLootbox = async (
           }
         }
 
-        const lootboxRolls = await query.getMany();
-        const response = lootboxRolls.map((lootboxRoll) => ({
-          sequence: String(lootboxRoll.sequence),
-          nonce: lootboxRoll.nonce,
-          user_id: lootboxRoll.user_id,
-          roll_id: String(lootboxRoll.roll_id),
-          roll_count: lootboxRoll.roll_count,
-          server_nonce: String(lootboxRoll.server_nonce),
-          server_timestamp: lootboxRoll.server_timestamp.toISOString(),
-          pi: lootboxRoll.pi,
-          beta: lootboxRoll.beta,
-          random_numbers: lootboxRoll.random_numbers.map((randomNumber) =>
+        const founds = await query.getMany();
+        if (founds.length == 0) {
+          return reply.code(200).send([]);
+        }
+        const resp = founds.map((roll) => ({
+          sequence: String(roll.sequence),
+          nonce: roll.nonce,
+          user_id: roll.user_id,
+          roll_id: String(roll.roll_id),
+          roll_count: roll.roll_count,
+          server_nonce: String(roll.server_nonce),
+          server_timestamp: roll.server_timestamp.toISOString(),
+          pi: roll.pi,
+          beta: roll.beta,
+          random_numbers: roll.random_numbers.map((randomNumber) =>
             String(randomNumber.random_number)
           ),
         }));
-
-        reply.code(200).send(response);
+        reply.code(200).send(resp);
       } catch (error) {
         instance.log.error(error);
         if (error instanceof Error) {
@@ -156,8 +167,52 @@ const setupLootbox = async (
     }
   );
 
+  instance.get<IGetLootboxRoll>(
+    "/roll/:sequence",
+    {
+      schema: SGetLootboxRoll,
+    },
+    async (request, reply) => {
+      try {
+        const { sequence } = request.params;
+        const query = rollRepo
+          .createQueryBuilder("lootboxRoll")
+          .leftJoinAndSelect("lootboxRoll.random_numbers", "randomNumber")
+          .where("lootboxRoll.sequence = :sequence", { sequence });
+        const found = await query.getOne();
+        if (!found) {
+          return reply
+            .code(404)
+            .send({ error: "Not Found", message: "Lootbox roll not found" });
+        }
+        const resp = {
+          sequence: String(found.sequence),
+          nonce: found.nonce,
+          user_id: found.user_id,
+          roll_id: String(found.roll_id),
+          roll_count: found.roll_count,
+          server_nonce: String(found.server_nonce),
+          server_timestamp: found.server_timestamp.toISOString(),
+          pi: found.pi,
+          beta: found.beta,
+          random_numbers: found.random_numbers.map((randomNumber) =>
+            String(randomNumber.random_number)
+          ),
+        };
+        return reply.code(200).send(resp);
+      } catch (error) {
+        instance.log.error(error);
+        if (error instanceof Error) {
+        }
+        return reply
+          .code(500)
+          .send({ error: "Internal Server Error", message: `${error}` });
+      }
+    }
+  );
+
   instance.post<IPostLootboxRoll>(
-    "/",
+    "/roll",
     {
       schema: SPostLootboxRoll,
       preValidation: async (request, reply) => {
@@ -175,7 +230,7 @@ const setupLootbox = async (
       roll.roll_count = roll_count;
       roll.server_nonce = Math.floor(Math.random() * 0x100000000) - 0x80000000;
       roll.server_timestamp = new Date();
-      const result = await lootboxRollRepository
+      const result = await rollRepo
         .createQueryBuilder()
         .insert()
         .into(LootboxRoll)
@@ -196,7 +251,7 @@ const setupLootbox = async (
       // instance.log.warn(`Current roll found: ${JSON.stringify(curRoll)}`);
       const server_timestamp = curRoll.server_timestamp.toISOString();
       let alpha = `${curRoll.sequence},${curRoll.nonce},${curRoll.user_id},${curRoll.roll_id},${curRoll.roll_count},${curRoll.server_nonce},${server_timestamp}`;
-      const prevRoll = await lootboxRollRepository
+      const prevRoll = await rollRepo
         .createQueryBuilder()
         .select()
         .where("sequence < :sequence", {
@@ -221,7 +276,7 @@ const setupLootbox = async (
         sequence_number: index + 0,
         random_number: randnum,
       }));
-      await lootboxRollRepository
+      await rollRepo
         .createQueryBuilder()
         .update(LootboxRoll)
         .set({
@@ -231,7 +286,7 @@ const setupLootbox = async (
         .where({ sequence: curRoll.sequence })
         .execute();
 
-      await lootboxRollRepository
+      await rollRepo
         .createQueryBuilder()
         .insert()
         .into(LootboxRandomNumber)

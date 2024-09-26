@@ -24,4 +24,8 @@ curl -X POST http://localhost:8282/lootbox/roll \
        "roll_id": 1,
        "roll_count": 2
      }'
+
+curl -X GET http://localhost:8282/lootbox/roll/5
+curl -X GET http://localhost:8282/lootbox/rolls?roll_id=100 | jq
+
 ```
