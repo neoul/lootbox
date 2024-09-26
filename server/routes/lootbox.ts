@@ -176,25 +176,40 @@ export const setupLootbox = async (
         .values(roll)
         .returning("*")
         .execute();
-      instance.log.info(
-        `Lootbox roll created: ${JSON.stringify(result.raw[0])}`
-      );
+      // instance.log.info(
+      //   `Lootbox roll created: ${JSON.stringify(result.raw[0])}`
+      // );
       if (result.raw.length === 0) {
         return reply.code(500).send({
           error: "Internal Server Error",
-          message: `error message test`,
+          message: `lootbox roll insert failed`,
         });
       }
-      const raw = result.raw[0];
-      const server_timestamp = raw.server_timestamp.toISOString();
-      const alpha = `${raw.sequence},${raw.nonce},${raw.user_id},${raw.roll_id},${raw.roll_count},${raw.server_nonce},${server_timestamp}`;
+
+      const curRoll = result.raw[0];
+      // instance.log.warn(`Current roll found: ${JSON.stringify(curRoll)}`);
+      const server_timestamp = curRoll.server_timestamp.toISOString();
+      let alpha = `${curRoll.sequence},${curRoll.nonce},${curRoll.user_id},${curRoll.roll_id},${curRoll.roll_count},${curRoll.server_nonce},${server_timestamp}`;
+      const prevRoll = await lootboxRollRepository
+        .createQueryBuilder()
+        .select()
+        .where("sequence < :sequence", {
+          sequence: curRoll.sequence,
+        })
+        .orderBy("sequence", "DESC")
+        .limit(1)
+        .getOne();
+      if (prevRoll) {
+        // instance.log.warn(`Previous roll found: ${JSON.stringify(prevRoll)}`);
+        alpha += `${prevRoll.user_id},${prevRoll.roll_id},${prevRoll.nonce},${prevRoll.server_nonce}`;
+      }
       const { beta, pi } = vrf.hash(
         Uint8Array.from(new TextEncoder().encode(alpha))
       );
-      console.log("pi", pi.length);
+
       const random_numbers = sliceAndConvertToBigInt(beta);
       const rand_values = random_numbers.map((randnum, index) => ({
-        lootbox_roll_sequence: raw.sequence,
+        lootbox_roll_sequence: curRoll.sequence,
         sequence_number: index + 0,
         random_number: randnum,
       }));
@@ -202,7 +217,7 @@ export const setupLootbox = async (
         .createQueryBuilder()
         .update(LootboxRoll)
         .set({ pi: Buffer.from(pi).toString("hex") })
-        .where({ sequence: raw.sequence })
+        .where({ sequence: curRoll.sequence })
         .execute();
 
       await lootboxRollRepository
@@ -212,16 +227,13 @@ export const setupLootbox = async (
         .values(rand_values)
         .execute();
 
-      // const ok = vrf.verify(pi, Uint8Array.from(new TextEncoder().encode(alpha)), beta);
-      // instance.log.warn(`ok ${ok}`);
-
       const resp: TLootboxRollReply = {
-        sequence: raw.sequence,
-        nonce: raw.nonce,
+        sequence: curRoll.sequence,
+        nonce: curRoll.nonce,
         user_id,
         roll_id,
         roll_count,
-        server_nonce: raw.server_nonce,
+        server_nonce: curRoll.server_nonce,
         server_timestamp: server_timestamp,
         random_numbers: random_numbers,
       };
