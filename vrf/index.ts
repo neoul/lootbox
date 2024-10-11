@@ -32,6 +32,10 @@ export class VRF implements IVRF {
     }
   }
 
+  getPrivateKey() {
+    return this.secretKey.toString("hex");
+  }
+
   private compressPublicKey(publicKeyRaw: Buffer): Buffer {
     const prefix = publicKeyRaw[64] % 2 === 0 ? 0x02 : 0x03;
     return Buffer.concat([Buffer.from([prefix]), publicKeyRaw.slice(1, 33)]);

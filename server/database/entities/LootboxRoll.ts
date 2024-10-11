@@ -9,9 +9,14 @@ import {
   JoinColumn,
   PrimaryColumn,
 } from "typeorm";
+import { Key } from "./Key";
 
 @Entity("lootbox_rolls")
 export class LootboxRoll {
+  @ManyToOne(() => Key, (key) => key.id)
+  @JoinColumn({ name: "sequence" })
+  key_id!: Key;
+
   @PrimaryGeneratedColumn({ type: "bigint" })
   sequence!: string;
 

@@ -3,6 +3,7 @@ import Fastify from "fastify";
 import { TypeBoxTypeProvider } from "@fastify/type-provider-typebox";
 import { Command } from "commander";
 import * as fs from "fs";
+import * as path from "path";
 import { Config } from "./config";
 
 import { setupDatabase } from "./database/db.config";
@@ -24,11 +25,15 @@ type Args = {
 export const program = new Command();
 program.name("lootbox");
 program.description("Supervlabs Lootbox");
-program.option("-c, --config <config>", "Path to a yaml config file");
-program.option("-n, --new_key", "Create a new lootbox with the new key");
-program.requiredOption(
+program.option("-c, --config <config>", "path to a yaml config file");
+program.option(
+  "-n, --new_key",
+  "start the lootbox with the new key if the secret_key_file does not exist"
+);
+program.option(
   "-s, --secret_key_file <secret_key_file>",
-  "Secret key file path"
+  "Secret key file path",
+  ".key/p256"
 );
 
 program.action(async (args: Args) => {
@@ -45,12 +50,25 @@ program.action(async (args: Args) => {
 program.parse();
 
 async function run({ config, new_key, secret_key_file }: Args) {
-  console.log("Starting server...", config, new_key, secret_key_file);
   let configObj: Config = config
     ? Config.from_yaml_file(config)
     : Config.from_env();
-  const secretkey = fs.readFileSync(secret_key_file, "utf8");
-  const vrf = new_key ? new VRF() : new VRF(secretkey);
+  const exists = fs.existsSync(secret_key_file);
+  if (!exists && !new_key) {
+    throw new Error(
+      "secret_key_file does not exist and --new_key option is not provided"
+    );
+  }
+  const vrf = exists
+    ? new VRF(fs.readFileSync(secret_key_file, "utf8"))
+    : new VRF();
+  if (!secret_key_file && new_key) {
+    const new_key_file = path.resolve(path.dirname(secret_key_file));
+    fs.mkdirSync(path.dirname(new_key_file), { recursive: true });
+    fs.writeFileSync(new_key_file, vrf.getPrivateKey());
+    console.log("Saved new secret key to:", new_key_file);
+  }
+  
   const instance = Fastify({
     logger: loggingConfig[configObj.node_env] ?? true,
     // bodyLimit: 1000000, // 1MB

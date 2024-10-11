@@ -29,3 +29,16 @@ curl -X GET http://localhost:8282/lootbox/roll/5
 curl -X GET http://localhost:8282/lootbox/rolls?roll_id=100 | jq
 
 ```
+
+## Generate P-256 Crypto key
+
+
+```bash
+openssl ecparam -name prime256v1 -genkey -noout -out private_key.pem
+openssl ec -in private_key.pem -pubout -out public_key.pem
+openssl ec -in private_key.pem -text -noout
+openssl ec -in private_key.pem -text -noout | grep priv -A 3 | tail -n +2 | tr -d '\n[:space:]:' | sed 's/^00//' > private_key
+```
+
+> [Info] NIST P-256 = secp256r1 = prime256v1 (OpenSSL)
+
