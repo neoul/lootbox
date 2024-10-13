@@ -24,7 +24,7 @@ import {
   TLootboxRollParams,
 } from "../types";
 import VRF from "../../vrf";
-import { Key } from "../database/entities/Key";
+import { VRFKey } from "../database/entities/VRFKey";
 
 function sliceAndConvertToBigInt(array: Uint8Array): string[] {
   const result: string[] = [];
@@ -97,7 +97,8 @@ type IGetLootboxRolls = {
   };
 };
 
-export async function setupLootboxRoll(instance: FastifyInstance, vrf: VRF) {
+
+export async function registerLootboxRoll(instance: FastifyInstance, vrf: VRF) {
   // find existing key and update it if necessary
   instance.register(setupLootbox, { prefix: "/lootbox", vrf });
 }
@@ -109,12 +110,6 @@ const setupLootbox = async (
   const vrf = opts.vrf as VRF;
   const rollRepo: Repository<LootboxRoll> =
     instance.orm.getRepository(LootboxRoll);
-  const keyRepo: Repository<Key> = instance.orm.getRepository(Key);
-  // const key = await keyRepo.find({ public_key: vrf.getPublicKey() });
-
-  // if (!key) {
-  //   throw new Error("Key not found");
-  // }
 
   instance.get<IGetLootboxRolls>(
     "/rolls",

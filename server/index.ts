@@ -6,10 +6,10 @@ import * as fs from "fs";
 import * as path from "path";
 import { Config } from "./config";
 
-import { setupDatabase } from "./database/db.config";
+import { registerDatabase, setupDatabase } from "./database/setup";
 
 import { loggingConfig } from "./logging";
-import { setupLootboxRoll } from "./routes/lootboxRoll";
+import { registerLootboxRoll } from "./routes/lootboxRoll";
 import VRF from "../vrf";
 
 // (BigInt.prototype as any).toJSON = function () {
@@ -73,7 +73,10 @@ async function run({ config, new_key, secret_key_file }: Args) {
     logger: loggingConfig[configObj.node_env] ?? true,
     // bodyLimit: 1000000, // 1MB
   }).withTypeProvider<TypeBoxTypeProvider>();
-  setupDatabase(instance);
-  setupLootboxRoll(instance, vrf);
+  registerDatabase(instance);
+  registerLootboxRoll(instance, vrf);
+  instance.addHook('onReady', async function () {
+    await setupDatabase(vrf.getPublicKey());
+  });
   return await instance.listen({ host: configObj.host, port: configObj.port });
 }

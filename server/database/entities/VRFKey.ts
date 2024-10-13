@@ -1,12 +1,12 @@
 import { Entity, PrimaryGeneratedColumn, Column, OneToMany } from "typeorm";
 import { LootboxRoll } from "./LootboxRoll";
 
-@Entity()
-export class Key {
+@Entity("vrf_key")
+export class VRFKey {
   @PrimaryGeneratedColumn()
   id!: number;
 
-  @Column({ type: "varchar", length: 64 })
+  @Column({ type: "varchar", length: 130, unique: true })
   public_key!: string;
 
   @OneToMany(() => LootboxRoll, (roll) => roll.key_id)
