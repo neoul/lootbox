@@ -1,8 +1,8 @@
 import { Entity, PrimaryGeneratedColumn, Column, OneToMany } from "typeorm";
 import { LootboxRoll } from "./LootboxRoll";
 
-@Entity("vrf_key")
-export class VRFKey {
+@Entity("keys")
+export class Key {
   @PrimaryGeneratedColumn()
   id!: number;
 
