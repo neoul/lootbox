@@ -13,7 +13,7 @@ docker compose up --build
 docker compose up db -d
 pnpm install
 pnpm build
-pnpm start:dev -s .key/abcd --new_key
+pnpm start:dev -s .key/randbox.key --new_key
 ```
 
 ```bash

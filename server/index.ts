@@ -62,11 +62,14 @@ async function run({ config, new_key, secret_key_file }: Args) {
   const vrf = exists
     ? new VRF(fs.readFileSync(secret_key_file, "utf8"))
     : new VRF();
-  if (!secret_key_file && new_key) {
-    const new_key_file = path.resolve(path.dirname(secret_key_file));
-    fs.mkdirSync(path.dirname(new_key_file), { recursive: true });
-    fs.writeFileSync(new_key_file, vrf.getPrivateKey());
-    console.log("Saved new secret key to:", new_key_file);
+  console.log("Secret key:", secret_key_file, new_key, exists, vrf.getPrivateKey());
+
+  if (secret_key_file && new_key) {
+    const new_dir = path.resolve(path.dirname(secret_key_file));
+    console.log("Creating directory:", new_dir);
+    fs.mkdirSync(new_dir, { recursive: true });
+    fs.writeFileSync(path.resolve(secret_key_file), vrf.getPrivateKey());
+    console.log("Saved new secret key to:", secret_key_file);
   }
   
   const instance = Fastify({
