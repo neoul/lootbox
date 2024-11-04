@@ -9,13 +9,13 @@ import {
   JoinColumn,
   PrimaryColumn,
 } from "typeorm";
-import { VRFKey } from "./VRFKey";
+import { Key } from "./Key";
 
 @Entity("lootbox_rolls")
 export class LootboxRoll {
-  @ManyToOne(() => VRFKey, (key) => key.id)
+  @ManyToOne(() => Key, (key) => key.id)
   @JoinColumn({ name: "sequence" })
-  key_id!: VRFKey;
+  key_id!: Key;
 
   @PrimaryGeneratedColumn({ type: "bigint" })
   sequence!: string;

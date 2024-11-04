@@ -24,7 +24,7 @@ import {
   TLootboxRollParams,
 } from "../types";
 import VRF from "../../vrf";
-import { VRFKey } from "../database/entities/VRFKey";
+import { Key } from "../database/entities/Key";
 
 function sliceAndConvertToBigInt(array: Uint8Array): string[] {
   const result: string[] = [];
